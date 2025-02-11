@@ -37,14 +37,21 @@ class EIP155Lib {
     }
   }
 
-  async getAddress() {
+  async getAddress(addressInfo:any) {
     try {
       console.log("keepkey: ", this.wallet)
       console.log("this.wallet.ETH: ", this.wallet.ETH)
       console.log("this.wallet.ETH: ", this.wallet.ETH.wallet)
       console.log("this.wallet.ETH.wallet.address: ", this.wallet.ETH.wallet.address)
+
+      // console.log("this.wallet.ETH.wallet.address: ", this.wallet.ETH.wallet)
+      console.log("this.wallet.ETH.keepkeySdk: ", this.wallet.ETH.keepkeySdk)
+      console.log("addressInfo: ", addressInfo);
+      let address2 = await this.wallet.ETH.keepkeySdk.address.ethereumGetAddress({ address_n: addressInfo.addressNList })
+      console.log("address2: ", address2.address);
+
       // Use KeepKey's method to get the wallet address
-      return this.wallet.ETH.wallet.address;
+      return address2.address;
     } catch (e) {
       console.error(e);
     }
@@ -205,11 +212,33 @@ export async function createOrRestoreEIP155Wallet(keepkey: any) {
     wallet1 = wallet;
 
     // Assuming KeepKey can provide a list of addresses or a single address
-    const address = await wallet.getAddress();
-    console.log("address: ", address);
+
+    let addressInfo1 = {
+      addressNList: [2147483692, 2147483708, 2147483648, 0, 0],
+      coin: 'Ethereum',
+      scriptType: 'ethereum',
+      showDisplay: false
+    }
+
+    const address1 = await wallet.getAddress(addressInfo1);
+    console.log("address1: ", address1);
+
+    let addressInfo2 = {
+      addressNList: [2147483692, 2147483708, 2147483648, 0, 1],
+      coin: 'Ethereum',
+      scriptType: 'ethereum',
+      showDisplay: false
+    }
+
+    const address2 = await wallet.getAddress(addressInfo2);
+    console.log("address2: ", address2);
+
+    // get account 2
+
 
     eip155Wallets = {
-      [address]: wallet,
+      [address1]: wallet,
+      [address2]: wallet,
     };
     eip155Addresses = Object.keys(eip155Wallets);
 
