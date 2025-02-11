@@ -239,7 +239,7 @@ export async function createOrRestoreEIP155Wallet(keepkey: any) {
     console.log("address1: ", address1);
 
     let addressInfo2 = {
-      addressNList: [2147483692, 2147483708, 2147483648, 0, 1],
+      addressNList: [2147483692, 2147483708, 2147483648, 1, 0],
       coin: 'Ethereum',
       scriptType: 'ethereum',
       showDisplay: false
