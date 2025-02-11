@@ -16,6 +16,7 @@ export default function AccountPicker() {
     const account = Number(value)
     console.log('account', account)
     SettingsStore.setAccount(account)
+    SettingsStore.setActiveAccount(account)
     SettingsStore.setEIP155Address(eip155Addresses[account])
     // SettingsStore.setCosmosAddress(cosmosAddresses[account])
     // SettingsStore.setSolanaAddress(solanaAddresses[account])

@@ -15,8 +15,11 @@ import { JsonRpcProvider } from 'ethers';
 
 class EIP155Lib {
   wallet: any;
+  derivationPath: number[];
+
   constructor(wallet: any) {
     this.wallet = wallet.keepkey;
+    this.derivationPath = [];
   }
 
   async getMnemonic() {
@@ -39,19 +42,19 @@ class EIP155Lib {
 
   async getAddress(addressInfo:any) {
     try {
-      console.log("keepkey: ", this.wallet)
-      console.log("this.wallet.ETH: ", this.wallet.ETH)
-      console.log("this.wallet.ETH: ", this.wallet.ETH.wallet)
-      console.log("this.wallet.ETH.wallet.address: ", this.wallet.ETH.wallet.address)
-
-      // console.log("this.wallet.ETH.wallet.address: ", this.wallet.ETH.wallet)
-      console.log("this.wallet.ETH.keepkeySdk: ", this.wallet.ETH.keepkeySdk)
-      console.log("addressInfo: ", addressInfo);
-      let address2 = await this.wallet.ETH.keepkeySdk.address.ethereumGetAddress({ address_n: addressInfo.addressNList })
-      console.log("address2: ", address2.address);
+      // console.log("keepkey: ", this.wallet)
+      // console.log("this.wallet.ETH: ", this.wallet.ETH)
+      // console.log("this.wallet.ETH: ", this.wallet.ETH.wallet)
+      // console.log("this.wallet.ETH.wallet.address: ", this.wallet.ETH.wallet.address)
+      //
+      // // console.log("this.wallet.ETH.wallet.address: ", this.wallet.ETH.wallet)
+      // console.log("this.wallet.ETH.keepkeySdk: ", this.wallet.ETH.keepkeySdk)
+      // console.log("addressInfo: ", addressInfo);
+      let address = await this.wallet.ETH.keepkeySdk.address.ethereumGetAddress({ address_n: addressInfo.addressNList })
+      // console.log("address2: ", address2.address);
 
       // Use KeepKey's method to get the wallet address
-      return address2.address;
+      return address.address;
     } catch (e) {
       console.error(e);
     }
@@ -61,8 +64,13 @@ class EIP155Lib {
     try {
       console.log("signMessage: ", message)
       console.log("this.wallet.ETH.walletMethods: ", this.wallet.ETH.walletMethods)
-      // Use KeepKey's method to sign a message
-      let address = this.wallet.ETH.wallet.address
+      // Use KeepKey's method to sign a message with the correct derivation path
+      const address = await this.getAddress({ 
+        addressNList: this.derivationPath,
+        coin: 'Ethereum',
+        scriptType: 'ethereum',
+        showDisplay: false
+      });
       const messageFormated = `0x${Buffer.from(
           Uint8Array.from(
               typeof message === 'string' ? new TextEncoder().encode(message) : message,
@@ -71,6 +79,7 @@ class EIP155Lib {
       return this.wallet.ETH.keepkeySdk.eth.ethSign({ address, message: messageFormated });
     } catch (e) {
       console.error(e);
+      throw e;
     }
   }
 
@@ -123,12 +132,12 @@ class EIP155Lib {
 
       let input: any = {
         from: transaction.from,
-        addressNList: [2147483692, 2147483708, 2147483648, 0, 0], // Placeholder for actual derivation path
+        addressNList: this.derivationPath, // Use the stored derivation path
         data: transaction.data,
         nonce: transaction.nonce,
         gasLimit: transaction.gas,
         gas: transaction.gas,
-        value: transaction.value || '0x0', // Assuming the transaction value is 0
+        value: transaction.value || '0x0',
         to: transaction.to,
         chainId: `0x${transaction.chainId.toString(16)}`,
       };
@@ -162,9 +171,15 @@ class EIP155Lib {
     let tag = TAG + " | signTypedData | ";
     try {
       console.log(tag, "**** params: ", params);
+      const address = await this.getAddress({ 
+        addressNList: this.derivationPath,
+        coin: 'Ethereum',
+        scriptType: 'ethereum',
+        showDisplay: false
+      });
       let signedMessage = await this.wallet.ETH.keepkeySdk.eth.ethSignTypedData({
-        address: this.wallet.ETH.wallet.address,
-        addressNList: [2147483692, 2147483708, 2147483648, 0, 0],
+        address,
+        addressNList: this.derivationPath,
         typedData: params,
       })
       console.log(tag, "**** signedMessage: ", signedMessage);
@@ -208,10 +223,10 @@ export let eip155Addresses: string[]
 export async function createOrRestoreEIP155Wallet(keepkey: any) {
   try {
     console.log("createOrRestoreEIP155Wallet keepkey: ", keepkey);
-    const wallet = new EIP155Lib({ keepkey });
-    wallet1 = wallet;
-
-    // Assuming KeepKey can provide a list of addresses or a single address
+    
+    // Create wallet instances for each address
+    const wallet1 = new EIP155Lib({ keepkey });
+    const wallet2 = new EIP155Lib({ keepkey });
 
     let addressInfo1 = {
       addressNList: [2147483692, 2147483708, 2147483648, 0, 0],
@@ -220,7 +235,7 @@ export async function createOrRestoreEIP155Wallet(keepkey: any) {
       showDisplay: false
     }
 
-    const address1 = await wallet.getAddress(addressInfo1);
+    const address1 = await wallet1.getAddress(addressInfo1);
     console.log("address1: ", address1);
 
     let addressInfo2 = {
@@ -230,15 +245,16 @@ export async function createOrRestoreEIP155Wallet(keepkey: any) {
       showDisplay: false
     }
 
-    const address2 = await wallet.getAddress(addressInfo2);
+    const address2 = await wallet2.getAddress(addressInfo2);
     console.log("address2: ", address2);
 
-    // get account 2
-
+    // Store the derivation paths with the wallet instances
+    wallet1.derivationPath = addressInfo1.addressNList;
+    wallet2.derivationPath = addressInfo2.addressNList;
 
     eip155Wallets = {
-      [address1]: wallet,
-      [address2]: wallet,
+      [address1]: wallet1,
+      [address2]: wallet2,
     };
     eip155Addresses = Object.keys(eip155Wallets);
 
@@ -247,8 +263,7 @@ export async function createOrRestoreEIP155Wallet(keepkey: any) {
       eip155Addresses,
     };
   } catch (e) {
-    // Handle any errors
     console.error("Failed to create or restore EIP155 wallet:", e);
-    throw e; // It's generally a good practice to re-throw the error after logging it
+    throw e;
   }
 }

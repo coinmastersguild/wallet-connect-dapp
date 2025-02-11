@@ -48,28 +48,71 @@ const StyledSpan = styled('span', {
 } as any)
 
 export default function SessionProposalModal() {
-  const { smartAccountSponsorshipEnabled, smartAccountEnabled } = useSnapshot(SettingsStore.state)
+  const { smartAccountSponsorshipEnabled, smartAccountEnabled, activeAccount } = useSnapshot(SettingsStore.state)
   // Get proposal data and wallet address from store
   const data = useSnapshot(ModalStore.state)
   const proposal = data?.data?.proposal as SignClientTypes.EventArguments['session_proposal']
   const [isLoadingApprove, setIsLoadingApprove] = useState(false)
   const [isLoadingReject, setIsLoadingReject] = useState(false)
+  
+  console.log('Active Account:', activeAccount);
   console.log('proposal', data.data?.proposal)
-  const supportedNamespaces = useMemo(() => {
-  // eip155
-  const eip155Chains = Object.keys(EIP155_CHAINS)
-  const eip155Methods = Object.values(EIP155_SIGNING_METHODS)
+  
+  const getAddress = useCallback((namespace?: string) => {
+    if (!namespace) return 'N/A'
+    switch (namespace) {
+      case 'eip155':
+        return eip155Addresses[activeAccount]
+      default:
+        return 'N/A'
+    }
+  }, [activeAccount])
 
+  const supportedNamespaces = useMemo(() => {
+    if (!proposal) return {
+      eip155: {
+        chains: [],
+        methods: [],
+        events: [],
+        accounts: []
+      }
+    };
+
+    // Get required methods from the proposal
+    const requiredMethods = proposal.params.requiredNamespaces?.eip155?.methods || [];
+    const optionalMethods = proposal.params.optionalNamespaces?.eip155?.methods || [];
+    
+    // Combine all required and optional methods
+    const methods = [...new Set([...requiredMethods, ...optionalMethods])];
+
+    // Get required events from the proposal
+    const requiredEvents = proposal.params.requiredNamespaces?.eip155?.events || [];
+    const optionalEvents = proposal.params.optionalNamespaces?.eip155?.events || [];
+    
+    // Combine all required and optional events
+    const events = [...new Set([...requiredEvents, ...optionalEvents, 'accountsChanged', 'chainChanged'])];
+
+    // Get chains from the proposal
+    const requiredChains = proposal.params.requiredNamespaces?.eip155?.chains || [];
+    const optionalChains = proposal.params.optionalNamespaces?.eip155?.chains || [];
+    
+    // Combine all chains
+    const chains = [...new Set([...requiredChains, ...optionalChains])];
+
+    // Use only the active account's address
+    const activeAddress = eip155Addresses ? eip155Addresses[activeAccount] : '';
+    console.log('Using active address:', activeAddress, 'from account:', activeAccount);
+    const accounts = chains.map(chain => `${chain}:${activeAddress}`);
 
     return {
       eip155: {
-        chains: eip155Chains,
-        methods: eip155Methods,
-        events: ['accountsChanged', 'chainChanged'],
-        accounts: eip155Chains.map(chain => `${chain}:${(eip155Addresses || [])[0] || ''}`).flat()
+        chains,
+        methods,
+        events,
+        accounts
       }
     }
-  }, [])
+  }, [proposal, activeAccount, eip155Addresses])
   console.log('supportedNamespaces', supportedNamespaces, eip155Addresses)
 
   const requestedChains = useMemo(() => {
@@ -125,13 +168,6 @@ export default function SessionProposalModal() {
       )
   }, [proposal, supportedChains])
   console.log('notSupportedChains', notSupportedChains)
-  const getAddress = useCallback((namespace?: string) => {
-    if (!namespace) return 'N/A'
-    switch (namespace) {
-      case 'eip155':
-        return eip155Addresses[0]
-    }
-  }, [])
 
   const namespaces = buildApprovedNamespaces({
     proposal: proposal.params as any,
@@ -234,14 +270,16 @@ export default function SessionProposalModal() {
       </Row>
       <Grid.Container style={{ marginBottom: '10px', marginTop: '10px' }} justify={'space-between'}>
         <Grid>
-          <Row style={{ color: 'GrayText' }}>Accounts</Row>
+          <Row style={{ color: 'GrayText' }}>Active Account ({activeAccount})</Row>
           {supportedChains.length &&
             supportedChains.map((chain, i) => {
+              if (!chain?.namespace) return null;
+              const activeAddress = eip155Addresses[activeAccount];
               return (
                 <Row key={i}>
-                  <ChainAddressMini key={i} address={getAddress(chain?.namespace) || 'test'} />
+                  <ChainAddressMini key={i} address={activeAddress} />
                 </Row>
-              )
+              );
             })}
 
           <Row style={{ color: 'GrayText' }}>Smart Accounts</Row>
@@ -253,7 +291,7 @@ export default function SessionProposalModal() {
           {supportedChains.length &&
             supportedChains.map((chain, i) => {
               if (!chain) {
-                return <></>
+                return null;
               }
 
               return (

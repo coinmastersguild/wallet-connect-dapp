@@ -22,6 +22,7 @@ interface State {
   sessions: SessionTypes.Struct[]
   smartAccountSponsorshipEnabled: boolean,
   smartAccountEnabled: boolean,
+  activeAccount: number
 }
 
 /**
@@ -44,6 +45,7 @@ const state = proxy<State>({
   sessions: [],
   smartAccountSponsorshipEnabled: false,
   smartAccountEnabled: false,
+  activeAccount: 0
 })
 
 /**
@@ -54,6 +56,10 @@ const SettingsStore = {
 
   setAccount(value: number) {
     state.account = value
+  },
+
+  setActiveAccount(value: number) {
+    state.activeAccount = value
   },
 
   setEIP155Address(eip155Address: string) {
@@ -122,6 +128,14 @@ const SettingsStore = {
 
   toggleSmartAccountEnabled() {
     state.smartAccountEnabled = !state.smartAccountEnabled
+  },
+
+  setSmartAccountSponsorshipEnabled(value: boolean) {
+    state.smartAccountSponsorshipEnabled = value
+  },
+
+  setSmartAccountEnabled(value: boolean) {
+    state.smartAccountEnabled = value
   }
 }
 
