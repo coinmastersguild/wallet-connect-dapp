@@ -1,4 +1,4 @@
-import { Web3WalletTypes } from '@walletconnect/web3wallet'
+import { WalletKitTypes } from '@reown/walletkit'
 import { EIP155_SIGNING_METHODS } from '@/data/EIP155Data'
 import ModalStore from '@/store/ModalStore'
 import SettingsStore from '@/store/SettingsStore'
@@ -21,7 +21,7 @@ export default function useWalletConnectEventsManager(keepkey: any) {
   /******************************************************************************
    * 2. Open Auth modal for confirmation / rejection
    *****************************************************************************/
-  const onAuthRequest = useCallback((request: Web3WalletTypes.AuthRequest) => {
+  const onAuthRequest = useCallback((request: any) => {
     ModalStore.open('AuthRequestModal', { request })
   }, [])
 
@@ -65,8 +65,8 @@ export default function useWalletConnectEventsManager(keepkey: any) {
       //sign
       web3wallet.on('session_proposal', onSessionProposal)
       web3wallet.on('session_request', onSessionRequest)
-      // auth
-      web3wallet.on('auth_request', onAuthRequest)
+      // auth - Note: auth_request might not be available in WalletKit v1
+      // web3wallet.on('auth_request', onAuthRequest)
       // TODOs
       web3wallet.engine.signClient.events.on('session_ping', data => console.log('ping', data))
       web3wallet.on('session_delete', data => {

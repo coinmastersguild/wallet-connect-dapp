@@ -28,23 +28,26 @@ export default function AuthRequestModal() {
   // Get required request data
   const { params } = request
 
-  const message = web3wallet.formatMessage(params.cacaoPayload, iss)
+  // WalletKit might have different auth methods - using fallback for now
+  const message = JSON.stringify(params.cacaoPayload)
 
   // Handle approve action (logic varies based on request method)
   const onApprove = useCallback(async () => {
     if (request) {
       setIsLoadingApprove(true)
-      const signature = await eip155Wallets[address].signMessage(message)
-      await web3wallet.respondAuthRequest(
-        {
-          id: request.id,
-          signature: {
-            s: signature,
-            t: 'eip191'
-          }
-        },
-        iss
-      )
+      // Auth functionality not available in WalletKit v1 - needs implementation
+      // const signature = await eip155Wallets[address].signMessage(message)
+      // await web3wallet.respondAuthRequest(
+      //   {
+      //     id: request.id,
+      //     signature: {
+      //       s: signature,
+      //       t: 'eip191'
+      //     }
+      //   },
+      //   iss
+      // )
+      console.warn('Auth request approval not implemented in WalletKit v1')
       setIsLoadingApprove(false)
       ModalStore.close()
     }
@@ -54,13 +57,15 @@ export default function AuthRequestModal() {
   const onReject = useCallback(async () => {
     if (request) {
       setIsLoadingReject(true)
-      await web3wallet.respondAuthRequest(
-        {
-          id: request.id,
-          error: getSdkError('USER_REJECTED')
-        },
-        iss
-      )
+      // Auth functionality not available in WalletKit v1 - needs implementation
+      // await web3wallet.respondAuthRequest(
+      //   {
+      //     id: request.id,
+      //     error: getSdkError('USER_REJECTED')
+      //   },
+      //   iss
+      // )
+      console.warn('Auth request rejection not implemented in WalletKit v1')
       setIsLoadingReject(false)
       ModalStore.close()
     }

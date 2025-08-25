@@ -1,6 +1,6 @@
-import { Web3Wallet, IWeb3Wallet } from '@walletconnect/web3wallet'
+import { WalletKit, IWalletKit } from '@reown/walletkit'
 import { Core } from '@walletconnect/core'
-export let web3wallet: IWeb3Wallet
+export let web3wallet: IWalletKit
 
 export async function createWeb3Wallet(relayerRegionURL: string) {
   const core = new Core({
@@ -8,7 +8,7 @@ export async function createWeb3Wallet(relayerRegionURL: string) {
     relayUrl: relayerRegionURL ?? process.env.NEXT_PUBLIC_RELAY_URL
   })
 
-  web3wallet = await Web3Wallet.init({
+  web3wallet = await WalletKit.init({
     core: core as any,
     metadata: {
       name: 'React Wallet Example',
